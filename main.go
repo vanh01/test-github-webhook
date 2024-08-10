@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -20,7 +21,7 @@ func main() {
 	}
 	http.HandleFunc("/webhook", ghem.ServeHTTP)
 
-	http.ListenAndServe(":8080", nil)
+	log.Fatalln(http.ListenAndServe(":8081", nil))
 }
 
 type GitHubEventService struct {
@@ -52,6 +53,25 @@ func (s *GitHubEventService) processCommitCommentEvent(event *github.Commit) {
 }
 
 func (s *GitHubEventService) processForkEvent(event *github.ForkEvent) {
-	msg := fmt.Sprintf("%s has forked %s\nYou can access to %s", *event.Sender.Name, *event.Repo.Name, *event.Forkee.CloneURL)
+	if event == nil {
+		s.teleClient.SendMessage("Event is nil")
+	}
+	json, err := json.Marshal(event)
+	if err == nil {
+		fmt.Println(string(json))
+	}
+	senderName := "Someone"
+	if event.Sender != nil && event.Sender.Login != nil {
+		senderName = *event.Sender.Login
+	}
+	repoName := "your repository"
+	if event.Repo != nil && event.Repo.Name != nil {
+		repoName = *event.Repo.Name
+	}
+	url := ""
+	if event.Forkee != nil && event.Forkee.URL != nil {
+		url = *event.Forkee.URL
+	}
+	msg := fmt.Sprintf("%s has forked %s\nYou can access to %s", senderName, repoName, url)
 	s.teleClient.SendMessage(msg)
 }
