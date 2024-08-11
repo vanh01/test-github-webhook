@@ -50,6 +50,18 @@ func (s *GitHubEventService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *GitHubEventService) processCommitCommentEvent(event *github.Commit) {
+	if event == nil {
+		s.teleClient.SendMessage("Event is nil")
+	}
+	senderName := "Someone"
+	if event.Committer != nil && event.Committer.Name != nil {
+		senderName = *event.Committer.Name
+	}
+	sha := event.GetSHA()
+	cmtMsg := event.GetMessage()
+	url := event.GetURL()
+	msg := fmt.Sprintf("%s has commited with \"%s\". The SHA: %s\nYou can access to %s", senderName, cmtMsg, sha, url)
+	s.teleClient.SendMessage(msg)
 }
 
 func (s *GitHubEventService) processForkEvent(event *github.ForkEvent) {
